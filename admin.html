@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - Inteligencia Comercial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 font-sans text-slate-800 min-h-screen">
+
+    <div class="max-w-[850px] w-full mx-auto bg-white rounded-xl shadow-xl p-6 md:p-8 border-t-4 border-slate-900 mb-8">
+        <div class="mb-6 text-center border-b border-slate-200 pb-4">
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Centro de Carga de Datos</h1>
+            <p class="text-sm text-slate-500 font-medium mt-1">Gestión Central, Visualización y Sincronización en la Nube</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">📅 Días Hábiles del Mes</label>
+                <input type="number" id="inputDiasHabiles" value="22" class="w-full mt-2 p-2.5 bg-slate-50 border border-slate-300 rounded-md text-lg font-black text-slate-800 focus:ring-indigo-500">
+            </div>
+            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide">⏳ Días Transcurridos</label>
+                <input type="number" id="inputDiasTranscurridos" value="10" class="w-full mt-2 p-2.5 bg-slate-50 border border-slate-300 rounded-md text-lg font-black text-slate-800 focus:ring-indigo-500">
+            </div>
+        </div>
+
+        <div class="space-y-4 mb-6">
+            <div class="bg-slate-50 p-5 rounded-lg border border-slate-200 shadow-inner relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="absolute top-0 left-0 w-1 h-full bg-slate-900"></div>
+                <div><h2 class="font-bold text-slate-900 mb-1 flex items-center gap-2">📊 1. Matriz de Ejecución (Sell Out)</h2><p class="text-xs text-slate-500">Archivo con las ventas diarias.</p></div>
+                <input type="file" id="fileVentas" accept=".xlsx, .xls, .csv" class="w-full md:w-auto text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-white hover:file:bg-slate-900 cursor-pointer transition"/>
+            </div>
+            <div class="bg-blue-50 p-5 rounded-lg border border-blue-200 shadow-inner relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+                <div><h2 class="font-bold text-slate-900 mb-1 flex items-center gap-2">🎯 2. Metas e Indicadores</h2><p class="text-xs text-slate-500">Archivo con las cuotas por asesor.</p></div>
+                <input type="file" id="fileIndicadores" accept=".xlsx, .xls, .csv" class="w-full md:w-auto text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer transition"/>
+            </div>
+            <div class="bg-emerald-50 p-5 rounded-lg border border-emerald-200 shadow-inner relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-600"></div>
+                <div><h2 class="font-bold text-slate-900 mb-1 flex items-center gap-2">👥 3. Cartera de Clientes</h2><p class="text-xs text-slate-500">Archivo general de clientes activos.</p></div>
+                <input type="file" id="fileCartera" accept=".xlsx, .xls, .csv" class="w-full md:w-auto text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer transition"/>
+            </div>
+        </div>
+
+        <div id="panelTotales" class="hidden mb-6 bg-slate-900 p-5 rounded-lg shadow-inner text-white border border-slate-700">
+            <h3 class="font-bold mb-3 uppercase text-xs text-slate-400 flex items-center gap-2 tracking-widest"><span class="text-emerald-400">●</span> Previsualización de Carga</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div><span class="block text-[10px] text-slate-400 uppercase">Total Ventas ($)</span><span id="totDolares" class="text-xl md:text-2xl font-black text-emerald-400">$0</span></div>
+                <div><span class="block text-[10px] text-slate-400 uppercase">Volumen (Cajas)</span><span id="totCajas" class="text-xl md:text-2xl font-black text-sky-400">0</span></div>
+                <div><span class="block text-[10px] text-slate-400 uppercase">Registros Venta</span><span id="totVentas" class="text-xl md:text-2xl font-black text-white">0</span></div>
+                <div><span class="block text-[10px] text-slate-400 uppercase">Cartera / Metas</span><span id="totCarteraMetas" class="text-xl md:text-2xl font-black text-white">0 / 0</span></div>
+            </div>
+        </div>
+
+        <button id="btnProcesar" onclick="procesarYSubir()" class="w-full bg-slate-900 text-white font-bold py-4 px-4 rounded-md hover:bg-slate-800 transition text-lg shadow-md flex items-center justify-center gap-2">☁️ Sincronizar Archivos a la Nube</button>
+        <div id="panelEstado" class="mt-4 hidden p-4 rounded-md border text-sm font-bold text-center"></div>
+    </div>
+
+
+    <!-- Modales de Detalles para el Visor Global -->
+    <div id="modalDetalles" class="fixed inset-0 bg-slate-900 bg-opacity-90 z-50 flex flex-col items-center justify-center hidden p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 id="modalDetallesTitulo" class="text-lg md:text-xl font-black text-slate-900 uppercase">Detalle</h2>
+                <button onclick="cerrarModalDetalles()" class="text-slate-500 hover:text-red-500 font-bold text-xl">✕</button>
+            </div>
+            <div id="modalDetallesContenido" class="overflow-y-auto flex-1 pr-2">
+                <!-- Se inyecta tabla o lista dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- VISOR DE INFORMES PARA ADMINISTRADOR -->
+    <div class="max-w-[1400px] w-full mx-auto bg-white rounded-xl shadow-xl p-4 md:p-8 border-t-4 border-indigo-600 mb-8">
+        
+        <div class="border-b border-slate-200 pb-4 mb-6 flex justify-between items-center flex-wrap gap-4">
+            <div>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Visor de Informes Interno</h2>
+                <p class="text-sm text-slate-500 font-medium mt-1">Visualiza la data global o simula el panel individual de cada asesor.</p>
+            </div>
+            <button id="btnCargarVisor" onclick="cargarDatosDashboard()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-lg transition shadow-md flex items-center gap-2 text-sm md:text-base">
+                📥 Descargar Data de la Nube
+            </button>
+        </div>
+
+        <div id="pantallaCargaVisor" class="hidden py-16 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mx-auto mb-4"></div>
+            <h3 class="text-xl font-bold text-slate-700">Sincronizando y cruzando datos...</h3>
+        </div>
+
+        <div id="visorDashboard" class="hidden">
+            
+            <div class="bg-indigo-50 p-4 md:p-6 rounded-lg mb-4 border border-indigo-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⚙️</span>
+                    <div>
+                        <label class="block font-black text-indigo-900 uppercase text-xs md:text-sm tracking-wide">Alcance de la información:</label>
+                        <p class="text-xs text-indigo-600">Selecciona Empresa Completa o un Asesor</p>
+                    </div>
+                </div>
+                <select id="simuladorAsesor" onchange="simularVistaAsesor()" class="w-full md:w-1/2 p-3.5 rounded-lg bg-white border-2 border-indigo-300 font-bold text-indigo-700 shadow-md focus:ring-indigo-500 text-base outline-none cursor-pointer hover:border-indigo-400 transition"></select>
+            </div>
+
+            <!-- Filtro Global Fechas -->
+            <div class="mb-6 bg-slate-50 p-4 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm">
+                <label class="text-sm font-bold text-slate-600 uppercase flex items-center gap-2">📅 Filtro Global de Fecha:</label>
+                <select id="filtroFechaGlobal" onchange="aplicarFiltroFechaGlobal()" class="p-2.5 rounded-md bg-white border border-slate-300 text-sm focus:ring-emerald-500 font-bold text-slate-800 w-1/2 md:w-1/3 shadow-sm"></select>
+            </div>
+
+            <div class="flex gap-2 border-b border-slate-300 mb-6 pb-2">
+                <button id="btnTabObjetivos" onclick="cambiarPestaña('objetivos')" class="flex-1 py-3 px-2 bg-indigo-900 text-white font-bold rounded-lg transition tracking-wide text-xs md:text-sm text-center shadow-md border-b-4 border-emerald-500">🎯 OBJETIVOS</button>
+                <button id="btnTabGeneral" onclick="cambiarPestaña('general')" class="flex-1 py-3 px-2 bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold rounded-lg transition tracking-wide text-xs md:text-sm text-center shadow-sm">📊 SELL OUT</button>
+                <button id="btnTabClientes" onclick="cambiarPestaña('clientes')" class="flex-1 py-3 px-2 bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold rounded-lg transition tracking-wide text-xs md:text-sm text-center shadow-sm">👥 CARTERA</button>
+            </div>
+
+            <!-- PESTAÑA OBJETIVOS -->
+            <div id="tabObjetivos">
+                <div id="contenedorParametros"></div>
+                <div id="cajaSelectorAsesorMetas" class="hidden"><select id="filtroAsesorMetas"></select></div>
+                
+                <div id="contenedorGraficosMetas" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 hidden">
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200"><h3 class="text-xs font-bold text-slate-500 uppercase text-center mb-4">Cumplimiento en Dólares ($)</h3><div class="h-[250px] relative"><canvas id="cg_obj_dolar"></canvas></div></div>
+                    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200"><h3 class="text-xs font-bold text-slate-500 uppercase text-center mb-4">Volumen por Marca (Cajas)</h3><div class="h-[250px]"><canvas id="cg_obj_marcas"></canvas></div></div>
+                </div>
+                <div class="text-xs text-slate-400 font-bold mb-2 uppercase tracking-wider text-right">💡 Haz clic en cada métrica para ver detalles</div>
+                <div id="contenedorMetas" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+            </div>
+
+            <!-- PESTAÑA GENERAL -->
+            <div id="tabGeneral" class="hidden">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 mb-4 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 h-full w-1 bg-indigo-600"></div>
+                    <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase flex items-center gap-2">⚙️ Filtros de Análisis</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">📍 Zona</label><select id="filtroZona" onchange="actualizarFiltrosCascada()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-indigo-500 font-medium"></select></div>
+                        <div id="cajaFiltroAsesorGen" class="hidden"><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">👤 Asesor</label><select id="filtroAsesor" onchange="actualizarFiltrosCascada()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-indigo-500 font-medium"></select></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">🏭 Marca</label><select id="filtroProveedor" onchange="renderizarDashboardGeneral()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-indigo-500 font-medium"></select></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">📅 Semana</label><select id="filtroSemana" onchange="renderizarDashboardGeneral()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-indigo-500 font-medium"></select></div>
+                    </div>
+                    <button onclick="limpiarFiltros('general')" class="mt-4 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-md text-sm transition">Restablecer Filtros</button>
+                </div>
+
+                <!-- Toggle Métrica Sell Out -->
+                <div class="flex justify-end mb-4">
+                    <div class="inline-flex bg-slate-200 rounded-lg p-1">
+                        <button id="btnToggleDol" onclick="cambiarMetricaGeneral('dolares')" class="px-5 py-1.5 text-sm font-black rounded-md bg-white shadow-sm text-emerald-700 transition">Dólares ($)</button>
+                        <button id="btnToggleCaj" onclick="cambiarMetricaGeneral('cajas')" class="px-5 py-1.5 text-sm font-black rounded-md text-slate-500 hover:text-slate-800 transition">Cajas</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div><span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ingresos Totales</span><div id="kpiDolares" class="text-2xl lg:text-3xl font-black text-slate-900 mt-1">$0</div></div>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-1 bg-blue-600"></div><span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Volumen Total</span><div id="kpiCajas" class="text-2xl lg:text-3xl font-black text-slate-900 mt-1">0</div></div>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div><span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Clientes Atendidos</span><div id="kpiClientes" class="text-2xl lg:text-3xl font-black text-slate-900 mt-1">0</div></div>
+                    <div class="bg-white p-5 rounded-lg border border-slate-200 relative overflow-hidden"><div class="absolute top-0 left-0 w-full h-1 bg-amber-500"></div><span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ticket Promedio</span><div id="kpiTicket" class="text-2xl lg:text-3xl font-black text-slate-900 mt-1">$0</div></div>
+                </div>
+
+                <div class="bg-white p-5 md:p-6 rounded-lg border border-slate-200 mb-6 shadow-sm"><h2 class="text-sm font-bold mb-4 uppercase text-slate-800">Tendencia de Sell Out (Semanas)</h2><div class="h-[300px] md:h-[400px] w-full"><canvas id="cg_tendencia"></canvas></div></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-5 md:p-6 rounded-lg border border-slate-200 shadow-sm"><h2 class="font-bold text-sm mb-4 uppercase">Por Zona</h2><div class="h-[300px]"><canvas id="cg_zona"></canvas></div></div>
+                    <div class="bg-white p-5 md:p-6 rounded-lg border border-slate-200 shadow-sm"><h2 class="font-bold text-sm mb-4 uppercase">Por Proveedor</h2><div class="h-[300px]"><canvas id="cg_proveedor"></canvas></div></div>
+                    <div id="cajaGraficoAsesor" class="hidden bg-white p-5 md:p-6 rounded-lg border border-slate-200 shadow-sm"><h2 class="font-bold text-sm mb-4 uppercase">Por Asesor</h2><div class="h-[300px]"><canvas id="cg_asesor"></canvas></div></div>
+                    
+                    <!-- Reemplazo de Top Productos por Gráfico Semanal Doble -->
+                    <div class="bg-white p-5 md:p-6 rounded-lg border border-slate-200 shadow-sm"><h2 class="font-bold text-sm mb-4 uppercase">Ventas por Semana ($ vs Cajas)</h2><div class="h-[300px]"><canvas id="cg_semanal_doble"></canvas></div></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+                    <h2 class="text-base font-bold mb-4 uppercase">Detalle de Clientes Core (Top 20)</h2>
+                    <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                        <table class="min-w-full text-sm text-left border-collapse relative">
+                            <thead class="bg-slate-50 border-y border-slate-200 sticky top-0 shadow-sm z-10 text-slate-500 uppercase font-bold text-xs">
+                                <tr><th class="px-4 py-3">Rank</th><th class="px-4 py-3">Cliente</th><th class="px-4 py-3">Zona</th><th class="px-4 py-3 text-right">Cajas</th><th class="px-4 py-3 text-right">Valor ($)</th></tr>
+                            </thead>
+                            <tbody id="tablaTopClientes" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA CLIENTES -->
+            <div id="tabClientes" class="hidden">
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 mb-6 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 h-full w-1 bg-sky-500"></div>
+                    <h2 class="text-sm font-bold text-slate-900 mb-4 uppercase flex items-center gap-2">🔍 Cobertura de Cartera</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">📍 Zona</label><select id="filtroZonaCli" onchange="actualizarFiltrosCascadaCli()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-sky-500 font-medium"></select></div>
+                        <div id="cajaFiltroAsesorCli" class="hidden"><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">👤 Asesor</label><select id="filtroAsesorCli" onchange="actualizarFiltrosCascadaCli()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-sky-500 font-medium"></select></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">📆 Día Visita</label><select id="filtroDiaCli" onchange="renderizarTabClientes()" class="w-full p-2.5 rounded-md bg-sky-50 border border-sky-300 text-sm focus:ring-sky-500 font-bold text-sky-900"></select></div>
+                        <div><label class="block text-xs font-bold text-emerald-700 mb-1 uppercase">🚦 Estado</label><select id="filtroEstadoCli" onchange="renderizarTabClientes()" class="w-full p-2.5 rounded-md bg-emerald-50 border border-emerald-300 text-sm focus:ring-emerald-500 font-bold text-emerald-900"><option value="TODOS">TODOS</option><option value="ACTIVO">🟢 ACTIVOS</option><option value="INACTIVO">🔴 INACTIVOS</option></select></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">🏭 Marca</label><select id="filtroProvCli" onchange="renderizarTabClientes()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-sky-500 font-medium"></select></div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">📅 Semana</label><select id="filtroSemCli" onchange="renderizarTabClientes()" class="w-full p-2.5 rounded-md bg-slate-50 border border-slate-300 text-sm focus:ring-sky-500 font-medium"></select></div>
+                    </div>
+                    <button onclick="limpiarFiltros('clientes')" class="mt-4 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-md text-sm transition">Restablecer Filtros</button>
+                </div>
+
+                <div class="text-xs text-slate-400 font-bold mb-2 uppercase tracking-wider text-right">💡 Haz clic sobre un cliente para ver su portafolio</div>
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+                    <h2 class="text-base font-bold text-slate-900 uppercase mb-4">Cartera de Clientes Mapeada</h2>
+                    <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                        <table class="min-w-full text-sm text-left text-slate-800 border-collapse relative cursor-pointer">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-bold border-y border-slate-200 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="px-4 py-3">Razón Social / ID</th>
+                                    <th class="px-4 py-3">Zona</th>
+                                    <th class="px-4 py-3 hidden" id="colRutaTablaCli">Ruta (Asesor)</th>
+                                    <th class="px-4 py-3 text-center text-sky-700">Día Visita</th>
+                                    <th class="px-4 py-3 text-center">Estado</th>
+                                    <th class="px-4 py-3 text-right">Cajas</th>
+                                    <th class="px-4 py-3 text-right">Total ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaTotalClientesPC" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL COMBINADO -->
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzi9gsdWrJ62aEnWIBLxHcfcagrNgQY8dMbIrW59mSj1dN3ShgLM4ackTSBk6mH96Gz/exec";
+        
+        let metricaDashboard = 'dolares'; 
+
+        // ==========================================
+        // LÓGICA DE CARGA AL SERVIDOR 
+        // ==========================================
+        function mostrarEstado(mensaje, tipo) {
+            const panel = document.getElementById('panelEstado'); panel.className = "mt-4 p-4 rounded-md border text-sm font-bold text-center block";
+            if (tipo === 'cargando') panel.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200'); else if (tipo === 'exito') panel.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200'); else if (tipo === 'error') panel.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+            panel.innerHTML = mensaje;
+        }
+
+        const leerExcel = (file, palabraClaveCabecera) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                        const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                        let headerIndex = -1;
+                        if(palabraClaveCabecera) headerIndex = rawData.findIndex(row => row && row.some(s => typeof s === 'string' && s.toUpperCase().includes(palabraClaveCabecera)));
+                        else headerIndex = rawData.findIndex(row => row && row.length > 1); 
+                        if (headerIndex === -1) throw new Error("No se detectaron cabeceras válidas.");
+                        const headers = rawData[headerIndex].map(h => h ? h.toString().trim().toUpperCase() : '');
+                        const data = rawData.slice(headerIndex + 1).filter(r => r && r.length > 0).map(row => { let obj = {}; headers.forEach((h, i) => { if(h && row[i] !== undefined) obj[h] = row[i]; }); return obj; });
+                        resolve(data);
+                    } catch (err) { reject(err); }
+                };
+                reader.onerror = () => reject(new Error("Error al leer el archivo")); reader.readAsArrayBuffer(file);
+            });
+        };
+
+        async function procesarYSubir() {
+            const fileVentas = document.getElementById('fileVentas').files[0]; const fileIndicadores = document.getElementById('fileIndicadores').files[0]; const fileCartera = document.getElementById('fileCartera').files[0];
+            if (!fileVentas && !fileIndicadores && !fileCartera) { alert("⚠️ Selecciona al menos un archivo para subir."); return; }
+            const btn = document.getElementById('btnProcesar'); btn.disabled = true; btn.classList.add('opacity-50'); mostrarEstado("⏳ Procesando archivos y empaquetando datos...", "cargando");
+
+            let totDolares = 0; let totCajas = 0; let countVentas = 0;
+
+            try {
+                let payload = { accion: 'actualizarBase' };
+                payload.parametros = [{ habiles: document.getElementById('inputDiasHabiles').value, transcurridos: document.getElementById('inputDiasTranscurridos').value, ultimaActualizacion: new Date().toLocaleString() }];
+
+                if (fileVentas) {
+                    const rawVentas = await leerExcel(fileVentas, 'ASESOR'); payload.ventas = [];
+                    rawVentas.forEach(fila => {
+                        const asesor = (fila['ASESOR'] || fila['ASESOR VENTA'] || "").toString().toUpperCase().trim(); if (!asesor) return;
+                        const divisas = parseFloat(fila['DIV REAL']) || 0; const boxes = parseFloat(fila['CAJAS REAL']) || 0; const tipoDoc = (fila['TIPO DOC'] || "").toString().toUpperCase(); const esDevolucion = tipoDoc.includes('DEV') || tipoDoc.includes('NC') || (tipoDoc.includes('NEN') === false && divisas < 0);
+                        const valorDolaresFinal = esDevolucion ? -Math.abs(divisas) : divisas; const valorCajasFinal = esDevolucion ? -Math.abs(boxes) : boxes;
+                        totDolares += valorDolaresFinal; totCajas += valorCajasFinal; countVentas++;
+                        
+                        // CORRECCIÓN: Extracción de fecha para que suba a la nube
+                        let rawFecha = String(fila['FECHA VENTA'] || fila['FECHA'] || 'Sin Fecha');
+                        if(rawFecha.includes('T')) rawFecha = rawFecha.split('T')[0];
+                        
+                        payload.ventas.push({ 
+                            asesor, 
+                            zona: (fila['ZONA'] || "S/Z").toString().toUpperCase().trim(), 
+                            proveedor: (fila['PROVEEDOR'] || "S/P").toString().toUpperCase().trim(), 
+                            producto: (fila['PRODUCTO'] || fila['DESC ARTICULO'] || "S/PROD").toString().toUpperCase().trim(), 
+                            clienteId: fila['COD CLIENTE'], 
+                            clienteNombre: fila['NOMBRE CLIENTE'] || fila['CLIENTE'] || fila['COD CLIENTE'], 
+                            semana: (fila['SEMANA'] || fila['N° SEM'] || "S/S").toString().toUpperCase().trim(), 
+                            diaVisita: (fila['DIA'] || fila['DIA VISITA'] || fila['RUTA'] || "N/A").toString().toUpperCase().trim(), 
+                            cajas: valorCajasFinal, 
+                            dolares: valorDolaresFinal,
+                            fecha: rawFecha 
+                        });
+                    });
+                }
+                if (fileIndicadores) payload.indicadores = await leerExcel(fileIndicadores, 'ASESOR');
+                if (fileCartera) payload.cartera = await leerExcel(fileCartera, ''); 
+
+                document.getElementById('panelTotales').classList.remove('hidden'); document.getElementById('totDolares').innerText = '$' + totDolares.toLocaleString('en-US', {maximumFractionDigits:0}); document.getElementById('totCajas').innerText = totCajas.toLocaleString('en-US', {maximumFractionDigits:0}); document.getElementById('totVentas').innerText = countVentas.toLocaleString('en-US');
+                const cCartera = (payload.cartera && payload.cartera.length) ? payload.cartera.length : 0; const cMetas = (payload.indicadores && payload.indicadores.length) ? payload.indicadores.length : 0; document.getElementById('totCarteraMetas').innerText = `${cCartera} / ${cMetas}`;
+                mostrarEstado("🚀 Subiendo datos totalizados a la nube. Esto puede tomar unos segundos...", "cargando");
+
+                const respuesta = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+                const resultado = await respuesta.json();
+                
+                if (resultado.status === "Éxito") { mostrarEstado(`✅ ¡Carga exitosa! La base de datos está actualizada con los nuevos totales y parámetros.`, "exito"); document.getElementById('fileVentas').value = ''; document.getElementById('fileIndicadores').value = ''; document.getElementById('fileCartera').value = ''; } else { throw new Error(resultado.mensaje); }
+            } catch (error) { mostrarEstado("❌ Error de conexión: " + error.message, "error"); } finally { btn.disabled = false; btn.classList.remove('opacity-50'); }
+        }
+
+        // ==========================================
+        // LÓGICA DE VISUALIZACIÓN GLOBAL / INDIVIDUAL
+        // ==========================================
+        Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels.display = false; 
+
+        let ventasAll = []; let indicadoresAll = []; let carteraAll = []; let parametrosAll = [];
+        let ventasGlobalesRaw = []; let indicadoresRaw = []; let carteraRaw = []; let parametrosRaw = [];
+        let graficos = {}; let mapRutas = {}; 
+
+        async function cargarDatosDashboard() {
+            document.getElementById('btnCargarVisor').classList.add('hidden'); document.getElementById('pantallaCargaVisor').classList.remove('hidden');
+            try {
+                const response = await fetch(API_URL); const data = await response.json();
+                carteraAll = data.cartera || []; indicadoresAll = data.indicadores || []; parametrosAll = data.parametros || [];
+                
+                ventasAll = (data.ventas || []).map(v => {
+                    let rawFecha = String(v.k || v.K || v.fecha || v.FECHA || v.fechaVenta || 'Sin Fecha');
+                    if(rawFecha.includes('T')) rawFecha = rawFecha.split('T')[0];
+                    return { 
+                        ...v, 
+                        asesorCode: extraerRuta(v.asesor),
+                        fechaFormat: rawFecha,
+                        producto: v.j || v.J || v.producto || v.PRODUCTO || 'Desconocido'
+                    };
+                });
+
+                construirMapaRutasGlobal(); llenarSimuladorAsesores();
+                document.getElementById('pantallaCargaVisor').classList.add('hidden'); document.getElementById('visorDashboard').classList.remove('hidden');
+                
+                llenarSelect('filtroFechaGlobal', obtenerOpcionesUnicas(ventasAll, 'fechaFormat'), 'TODOS');
+                
+                simularVistaAsesor(); 
+            } catch(e) {
+                document.getElementById('pantallaCargaVisor').innerHTML = `<div class="text-red-500 font-bold mb-4 text-xl">❌ Error cargando datos de la nube. Intenta de nuevo.</div>`;
+                document.getElementById('btnCargarVisor').classList.remove('hidden');
+            }
+        }
+
+        function llenarSimuladorAsesores() {
+            const asesoresVentas = ventasAll.map(v => v.asesorCode).filter(c => c !== 'N/A');
+            const asesoresCartera = carteraAll.map(c => extraerRuta(c['RUTA']||c['ASESOR'])).filter(c => c !== 'N/A');
+            const asesoresMetas = indicadoresAll.map(i => extraerRuta(obtenerValorColumna(i, ['ASESOR', 'RUTA']))).filter(c => c !== 'N/A');
+            const unicos = [...new Set([...asesoresVentas, ...asesoresCartera, ...asesoresMetas])].sort();
+            
+            const select = document.getElementById('simuladorAsesor');
+            select.innerHTML = '<option value="GLOBAL" selected>🌍 TODA LA EMPRESA (VISIÓN GLOBAL)</option>';
+            unicos.forEach(code => { const opt = document.createElement('option'); opt.value = code; opt.text = `${code} - ${mapRutas[code] || 'Sin Nombre'}`; select.appendChild(opt); });
+        }
+
+        function simularVistaAsesor() {
+            const code = document.getElementById('simuladorAsesor').value; if(!code) return;
+            const isGlobal = (code === 'GLOBAL');
+
+            if(isGlobal) {
+                ventasGlobalesRaw = [...ventasAll]; carteraRaw = [...carteraAll]; indicadoresRaw = [...indicadoresAll];
+                document.getElementById('cajaFiltroAsesorGen').classList.remove('hidden');
+                document.getElementById('cajaFiltroAsesorCli').classList.remove('hidden');
+                document.getElementById('cajaGraficoAsesor').classList.remove('hidden');
+                document.getElementById('colRutaTablaCli').classList.remove('hidden');
+            } else {
+                ventasGlobalesRaw = ventasAll.filter(v => v.asesorCode === code);
+                carteraRaw = carteraAll.filter(c => extraerRuta(c['RUTA'] || c['ASESOR']) === code);
+                indicadoresRaw = indicadoresAll.filter(i => extraerRuta(obtenerValorColumna(i, ['ASESOR', 'RUTA', 'VENDEDOR'])) === code);
+                document.getElementById('cajaFiltroAsesorGen').classList.add('hidden');
+                document.getElementById('cajaFiltroAsesorCli').classList.add('hidden');
+                document.getElementById('cajaGraficoAsesor').classList.add('hidden');
+                document.getElementById('colRutaTablaCli').classList.add('hidden');
+            }
+
+            parametrosRaw = parametrosAll;
+            const selectMetas = document.getElementById('filtroAsesorMetas');
+            if(selectMetas) selectMetas.innerHTML = `<option value="${code}" selected>${code}</option>`;
+
+            renderizarParametros();
+            inicializarFiltrosGeneral();
+            inicializarFiltrosClientes();
+            renderizarMetas();
+            renderizarDashboardGeneral();
+            renderizarTabClientes();
+        }
+
+        // --- FUNCIONES CORE ---
+        function extraerRuta(str) { if(!str) return 'N/A'; const s = String(str).trim().toUpperCase(); const match = s.match(/^(\d[A-Z])/); if (match) return match[1]; if(s.includes('-')) return s.split('-')[0].trim(); return s; }
+        function construirMapaRutasGlobal() { ventasAll.forEach(v => { if (v.asesorCode !== 'N/A') mapRutas[v.asesorCode] = v.asesor; }); indicadoresAll.forEach(i => { const raw = i['ASESOR'] || i['RUTA'] || i['VENDEDOR'] || ''; const code = extraerRuta(raw); if (code !== 'N/A' && !mapRutas[code] && raw) mapRutas[code] = raw; }); }
+        const obtenerValorColumna = (obj, keywords) => { const keys = Object.keys(obj); const foundKey = keys.find(k => keywords.some(kw => k.toUpperCase().includes(kw.toUpperCase()))); return foundKey ? obj[foundKey] : null; };
+        function obtenerOpcionesUnicas(array, key) { return ['TODOS', ...new Set(array.map(item => item[key]).filter(Boolean))].sort(); }
+        function llenarSelect(id, opciones, valorActual) { const select = document.getElementById(id); if(!select) return; select.innerHTML = ''; opciones.forEach(op => { const option = document.createElement('option'); option.value = op; option.text = mapRutas[op] || op; if(op === valorActual) option.selected = true; select.appendChild(option); }); if (valorActual !== 'TODOS' && !opciones.includes(valorActual)) select.value = 'TODOS'; }
+        
+        function cambiarPestaña(tab) {
+            ['tabObjetivos', 'tabGeneral', 'tabClientes'].forEach(t => document.getElementById(t).classList.add('hidden'));
+            const baseClass = "flex-1 py-3 px-2 bg-slate-200 text-slate-700 hover:bg-slate-300 font-bold rounded-lg transition tracking-wide text-xs md:text-sm text-center shadow-sm";
+            ['btnTabObjetivos', 'btnTabGeneral', 'btnTabClientes'].forEach(b => document.getElementById(b).className = baseClass);
+            const btnActive = "flex-1 py-3 px-2 bg-indigo-900 text-white font-bold rounded-lg transition tracking-wide text-xs md:text-sm text-center shadow-md border-b-4 border-emerald-500";
+            if(tab === 'objetivos') { document.getElementById('tabObjetivos').classList.remove('hidden'); document.getElementById('btnTabObjetivos').className = btnActive; } 
+            else if(tab === 'general') { document.getElementById('tabGeneral').classList.remove('hidden'); document.getElementById('btnTabGeneral').className = btnActive; renderizarDashboardGeneral(); } 
+            else if(tab === 'clientes') { document.getElementById('tabClientes').classList.remove('hidden'); document.getElementById('btnTabClientes').className = btnActive; renderizarTabClientes(); }
+        }
+
+        function aplicarFiltroFechaGlobal() {
+            renderizarMetas(); renderizarDashboardGeneral(); renderizarTabClientes();
+        }
+
+        function inicializarFiltrosGeneral() { 
+            llenarSelect('filtroZona', obtenerOpcionesUnicas(ventasGlobalesRaw, 'zona'), 'TODOS'); 
+            llenarSelect('filtroAsesor', obtenerOpcionesUnicas(ventasGlobalesRaw, 'asesorCode'), 'TODOS'); 
+            llenarSelect('filtroProveedor', obtenerOpcionesUnicas(ventasGlobalesRaw, 'proveedor'), 'TODOS'); 
+            llenarSelect('filtroSemana', obtenerOpcionesUnicas(ventasGlobalesRaw, 'semana'), 'TODOS'); 
+        }
+
+        function actualizarFiltrosCascada() {
+            const fZona = document.getElementById('filtroZona').value; 
+            const fAses = document.getElementById('filtroAsesor') ? document.getElementById('filtroAsesor').value : 'TODOS';
+            const validZonas = fAses === 'TODOS' ? ventasGlobalesRaw : ventasGlobalesRaw.filter(v => v.asesorCode === fAses);
+            llenarSelect('filtroZona', obtenerOpcionesUnicas(validZonas, 'zona'), fZona);
+            const validAsesores = fZona === 'TODOS' ? ventasGlobalesRaw : ventasGlobalesRaw.filter(v => v.zona === fZona);
+            llenarSelect('filtroAsesor', obtenerOpcionesUnicas(validAsesores, 'asesorCode'), fAses);
+            renderizarDashboardGeneral();
+        }
+
+        function inicializarFiltrosClientes() { 
+            let zonas = new Set(), dias = new Set(), asesores = new Set();
+            ventasGlobalesRaw.forEach(v => { if(v.zona) zonas.add(v.zona); if(v.diaVisita) dias.add(v.diaVisita); if(v.asesorCode) asesores.add(v.asesorCode); });
+            carteraRaw.forEach(c => { if(c['ZONA']) zonas.add(c['ZONA'].toString().toUpperCase()); if(c['DIA'] || c['DIA VISITA']) dias.add((c['DIA'] || c['DIA VISITA']).toString().toUpperCase()); const code = extraerRuta(c['RUTA'] || c['ASESOR']); if(code !== 'N/A') asesores.add(code); });
+            llenarSelect('filtroZonaCli', ['TODOS', ...Array.from(zonas)].sort(), 'TODOS');
+            llenarSelect('filtroAsesorCli', ['TODOS', ...Array.from(asesores)].sort(), 'TODOS');
+            llenarSelect('filtroDiaCli', ['TODOS', ...Array.from(dias)].sort(), 'TODOS');
+            llenarSelect('filtroProvCli', obtenerOpcionesUnicas(ventasGlobalesRaw, 'proveedor'), 'TODOS'); 
+            llenarSelect('filtroSemCli', obtenerOpcionesUnicas(ventasGlobalesRaw, 'semana'), 'TODOS'); 
+        }
+
+        function actualizarFiltrosCascadaCli() { renderizarTabClientes(); }
+
+        function limpiarFiltros(pestana) { 
+            document.getElementById('filtroFechaGlobal').value = 'TODOS';
+            if(pestana === 'general') { ['filtroZona', 'filtroAsesor', 'filtroProveedor', 'filtroSemana'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = 'TODOS'; }); inicializarFiltrosGeneral(); renderizarDashboardGeneral(); } 
+            else { ['filtroZonaCli', 'filtroAsesorCli', 'filtroProvCli', 'filtroSemCli', 'filtroDiaCli', 'filtroEstadoCli'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = 'TODOS'; }); inicializarFiltrosClientes(); renderizarTabClientes(); } 
+        }
+
+        function renderizarParametros() {
+            if (parametrosRaw && parametrosRaw.length > 0) {
+                const p = parametrosRaw[0]; const habiles = parseInt(p.habiles) || 22; const trans = parseInt(p.transcurridos) || 10; const avance = Math.round((trans / habiles) * 100);
+                document.getElementById('contenedorParametros').innerHTML = `<div class="bg-indigo-600 text-white p-5 md:p-8 rounded-xl shadow-md mb-6 flex justify-between items-center relative overflow-hidden"><div class="absolute -right-4 -top-4 bg-indigo-500 opacity-50 w-32 h-32 rounded-full blur-2xl"></div><div class="z-10"><p class="text-xs uppercase tracking-wider text-indigo-200 font-bold mb-1">Avance del Mes</p><div class="flex items-baseline gap-1"><span class="text-4xl md:text-5xl font-black">${avance}%</span></div></div><div class="z-10 text-right"><div class="bg-indigo-700/50 px-4 py-3 rounded-lg border border-indigo-500/30 backdrop-blur-sm"><p class="text-xs text-indigo-100 font-medium">Hábiles: <span class="text-white font-bold text-sm ml-1">${habiles}</span></p><p class="text-xs text-indigo-100 font-medium mt-1">Transcurridos: <span class="text-white font-bold text-sm ml-1">${trans}</span></p></div></div></div>`;
+            }
+        }
+
+        function renderizarMetas() {
+            const codigoAsesor = document.getElementById('simuladorAsesor').value;
+            const filtroF = document.getElementById('filtroFechaGlobal').value;
+            const contenedor = document.getElementById('contenedorMetas'); const contGraficos = document.getElementById('contenedorGraficosMetas');
+            if(!codigoAsesor) return;
+
+            let metaDolar = 0, metaCartera = 0, metaEfectividad = 0, metaParmalat = 0, metaIsola = 0, metaPaveca = 0, metaComp = 0;
+            const esGlobal = (codigoAsesor === 'GLOBAL');
+
+            if (esGlobal) {
+                indicadoresRaw.forEach(row => {
+                    metaDolar += parseFloat(obtenerValorColumna(row, ['DOLAR_VENDIDO', 'DOLAR', 'META VENTA'])) || 0;
+                    metaCartera += parseFloat(obtenerValorColumna(row, ['CARTERA', 'CLIENTES'])) || 0;
+                    metaEfectividad += parseFloat(obtenerValorColumna(row, ['EFECTIVIDAD'])) || 0;
+                    metaParmalat += parseFloat(obtenerValorColumna(row, ['PARMALAT', 'CAJAS_PARMALAT'])) || 0;
+                    metaIsola += parseFloat(obtenerValorColumna(row, ['ISOLA', 'CAJAS_ISOLA'])) || 0;
+                    metaPaveca += parseFloat(obtenerValorColumna(row, ['PAVECA', 'BULTOS_PAVECA'])) || 0;
+                    metaComp += parseFloat(obtenerValorColumna(row, ['COMP', 'VENTAS_COMP', 'OTRAS'])) || 0;
+                });
+            } else {
+                const rowMeta = indicadoresRaw[0] || {}; 
+                metaDolar = parseFloat(obtenerValorColumna(rowMeta, ['DOLAR_VENDIDO', 'DOLAR', 'META VENTA'])) || 0;
+                metaCartera = parseFloat(obtenerValorColumna(rowMeta, ['CARTERA', 'CLIENTES'])) || 0;
+                metaEfectividad = parseFloat(obtenerValorColumna(rowMeta, ['EFECTIVIDAD'])) || 0;
+                metaParmalat = parseFloat(obtenerValorColumna(rowMeta, ['PARMALAT', 'CAJAS_PARMALAT'])) || 0;
+                metaIsola = parseFloat(obtenerValorColumna(rowMeta, ['ISOLA', 'CAJAS_ISOLA'])) || 0;
+                metaPaveca = parseFloat(obtenerValorColumna(rowMeta, ['PAVECA', 'BULTOS_PAVECA'])) || 0;
+                metaComp = parseFloat(obtenerValorColumna(rowMeta, ['COMP', 'VENTAS_COMP', 'OTRAS'])) || 0;
+            }
+
+            let real = { cartera: new Set(), efectividad: new Set(), parmalat: 0, isola: 0, paveca: 0, comp: 0, dolar: 0 };
+            
+            const ventasAsesor = ventasGlobalesRaw.filter(v => (filtroF === 'TODOS' || v.fechaFormat === filtroF));
+
+            ventasAsesor.forEach(v => {
+                const prov = (v.proveedor || "").toUpperCase(); const cajas = parseFloat(v.cajas) || 0; const dolares = parseFloat(v.dolares) || 0;
+                if (cajas > 0 || dolares > 0) { real.cartera.add(v.clienteId); if(v.semana && v.clienteId) real.efectividad.add(`${v.clienteId}-${v.semana}`); }
+                real.dolar += dolares;
+                if (prov.includes('PARMALAT') || prov.includes('INDULAC')) real.parmalat += cajas; else if (prov.includes('ISOLA')) real.isola += cajas; else if (prov.includes('PAVECA')) real.paveca += cajas; else real.comp += cajas;
+            });
+
+            const kpis = [
+                { id: "dolar", titulo: "Venta Dólares ($)", meta: metaDolar, real: real.dolar, prefijo: "$" }, 
+                { id: "efectividad", titulo: "Efectividad (Hits Semanales)", meta: metaEfectividad, real: real.efectividad.size, prefijo: "" },
+                { id: "cobertura", titulo: "Cobertura (Clientes)", meta: metaCartera, real: real.cartera.size, prefijo: "" }, 
+                { id: "parmalat", titulo: "Cajas Parmalat", meta: metaParmalat, real: real.parmalat, prefijo: "" },
+                { id: "isola", titulo: "Cajas Isola", meta: metaIsola, real: real.isola, prefijo: "" }, 
+                { id: "paveca", titulo: "Bultos Paveca", meta: metaPaveca, real: real.paveca, prefijo: "" }, 
+                { id: "otras", titulo: "Otras Marcas", meta: metaComp, real: real.comp, prefijo: "" }
+            ];
+
+            let html = ''; let tieneMetas = false;
+            kpis.forEach(kpi => {
+                if(kpi.meta > 0 || kpi.real > 0) { 
+                    tieneMetas = true; let porcentaje = kpi.meta > 0 ? (kpi.real / kpi.meta) * 100 : (kpi.real > 0 ? 100 : 0);
+                    let colorBarra = porcentaje >= 100 ? 'bg-emerald-500' : (porcentaje >= 75 ? 'bg-blue-500' : (porcentaje >= 50 ? 'bg-amber-500' : 'bg-red-500')); let anchoBarra = porcentaje > 100 ? 100 : porcentaje;
+                    html += `
+                        <div onclick="abrirModalObjetivo('${kpi.id}', '${kpi.titulo}', '${codigoAsesor}')" class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:bg-slate-50 hover:shadow-md transition">
+                            <div class="flex justify-between items-end mb-3">
+                                <div>
+                                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">${kpi.titulo}</h3>
+                                    <span class="text-xl md:text-2xl font-black text-slate-900">${kpi.prefijo}${kpi.real.toLocaleString('en-US', {maximumFractionDigits:0})}</span>
+                                    <span class="text-xs text-slate-400 font-medium ml-1">/ ${kpi.prefijo}${kpi.meta.toLocaleString('en-US', {maximumFractionDigits:0})}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold ${porcentaje >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${porcentaje.toFixed(1)}%</span>
+                                </div>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-4 mb-1 overflow-hidden shadow-inner">
+                                <div class="${colorBarra} h-4 rounded-full transition-all duration-1000" style="width: ${anchoBarra}%"></div>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if(!tieneMetas) { html = '<div class="col-span-full text-center p-8 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 font-bold shadow-inner">Sin cuotas asignadas.</div>'; contGraficos.classList.add('hidden'); } 
+            else { contGraficos.classList.remove('hidden'); const faltanteDolar = metaDolar > real.dolar ? metaDolar - real.dolar : 0; instanciarDona('cg_obj_dolar', ['Logrado ($)', 'Faltante ($)'], [real.dolar, faltanteDolar], ['#10b981', '#e2e8f0']); instanciarBarraAgrupada('cg_obj_marcas', ['Parmalat', 'Isola', 'Paveca', 'Otras'], [real.parmalat, real.isola, real.paveca, real.comp], [metaParmalat, metaIsola, metaPaveca, metaComp]); }
+            contenedor.innerHTML = html;
+        }
+
+        // FUNCIONES MODALES DETALLES OBJETIVOS Y CARTERA
+        function abrirModalObjetivo(tipoId, titulo, asesorVal) {
+            document.getElementById('modalDetallesTitulo').innerText = `DETALLE: ${titulo}`;
+            const filtroF = document.getElementById('filtroFechaGlobal').value;
+            const esGlobal = (asesorVal === 'GLOBAL');
+            
+            let dataFiltrada = ventasGlobalesRaw.filter(v => (filtroF === 'TODOS' || v.fechaFormat === filtroF));
+            
+            let htmlContenido = '';
+
+            if(tipoId === 'cobertura') {
+                let clientesActivados = new Set(dataFiltrada.filter(v => parseFloat(v.dolares)>0 || parseFloat(v.cajas)>0).map(v => String(v.clienteId).trim().toUpperCase()));
+                let carteraValida = carteraRaw;
+                let faltantes = carteraValida.filter(c => !clientesActivados.has(String(c['CODIGO'] || c['COD CLIENTE'] || c['CLIENTE']).trim().toUpperCase()));
+                
+                htmlContenido = `
+                    <p class="text-sm text-slate-500 mb-3 font-bold">Clientes que faltan por activar: <span class="text-red-500">${faltantes.length}</span></p>
+                    <table class="min-w-full text-xs text-left border-collapse">
+                        <thead class="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0 shadow-sm">
+                            <tr><th class="px-3 py-2">Cliente / ID</th><th class="px-3 py-2">Zona</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${faltantes.map(f => `<tr><td class="px-3 py-2 font-bold">${f['NOMBRE'] || f['NOMBRE CLIENTE'] || 'S/N'}<br><span class="text-[10px] text-slate-400 font-mono">${f['CODIGO'] || f['COD CLIENTE']}</span></td><td class="px-3 py-2 text-slate-600">${f['ZONA']||'S/Z'}</td></tr>`).join('')}
+                        </tbody>
+                    </table>`;
+
+            } else if (tipoId === 'efectividad') {
+                let hitsSemanales = {};
+                dataFiltrada.forEach(v => {
+                    const sem = v.semana || 'Sin Semana';
+                    if(!hitsSemanales[sem]) hitsSemanales[sem] = new Set();
+                    if(parseFloat(v.dolares)>0 || parseFloat(v.cajas)>0) hitsSemanales[sem].add(v.clienteId);
+                });
+                let htmlRows = Object.keys(hitsSemanales).sort().map(sem => `<tr><td class="px-3 py-2 font-bold text-slate-800">${sem}</td><td class="px-3 py-2 text-center text-emerald-600 font-black text-lg">${hitsSemanales[sem].size}</td></tr>`).join('');
+                htmlContenido = `
+                    <p class="text-sm text-slate-500 mb-3 font-bold">Activaciones consolidadas por semana</p>
+                    <table class="min-w-full text-sm text-left border-collapse"><thead class="bg-slate-100 text-slate-600 uppercase font-bold"><tr><th class="px-3 py-2">Semana</th><th class="px-3 py-2 text-center">Clientes Activados</th></tr></thead><tbody class="divide-y divide-slate-100">${htmlRows}</tbody></table>`;
+            } else {
+                let agrupado = {};
+                dataFiltrada.forEach(v => {
+                    let prov = (v.proveedor||'').toUpperCase();
+                    let entra = false;
+                    if(tipoId === 'dolar') entra = true;
+                    else if (tipoId === 'parmalat' && (prov.includes('PARMALAT')||prov.includes('INDULAC'))) entra = true;
+                    else if (tipoId === 'isola' && prov.includes('ISOLA')) entra = true;
+                    else if (tipoId === 'paveca' && prov.includes('PAVECA')) entra = true;
+                    else if (tipoId === 'otras' && !prov.includes('PARMALAT') && !prov.includes('INDULAC') && !prov.includes('ISOLA') && !prov.includes('PAVECA')) entra = true;
+
+                    if(entra) {
+                        const sem = v.semana || 'Sin Semana';
+                        if(!agrupado[sem]) agrupado[sem] = { dolares:0, cajas:0 };
+                        agrupado[sem].dolares += parseFloat(v.dolares)||0;
+                        agrupado[sem].cajas += parseFloat(v.cajas)||0;
+                    }
+                });
+
+                let htmlRows = Object.keys(agrupado).sort().map(sem => `<tr><td class="px-3 py-2 font-bold text-slate-800">${sem}</td><td class="px-3 py-2 text-right font-medium">${Math.round(agrupado[sem].cajas).toLocaleString()}</td><td class="px-3 py-2 text-right text-emerald-600 font-black">$${agrupado[sem].dolares.toLocaleString('en-US',{minimumFractionDigits:1})}</td></tr>`).join('');
+                htmlContenido = `
+                    <table class="min-w-full text-sm text-left border-collapse"><thead class="bg-slate-100 text-slate-600 uppercase font-bold"><tr><th class="px-3 py-2">Semana</th><th class="px-3 py-2 text-right">Cajas</th><th class="px-3 py-2 text-right">Monto ($)</th></tr></thead><tbody class="divide-y divide-slate-100">${htmlRows}</tbody></table>`;
+            }
+
+            document.getElementById('modalDetallesContenido').innerHTML = htmlContenido;
+            document.getElementById('modalDetalles').classList.remove('hidden');
+        }
+
+        function abrirDetalleClientePortafolio(clienteId, nomCliente) {
+            document.getElementById('modalDetallesTitulo').innerText = `TOP 5 PORTAFOLIOS - ${nomCliente}`;
+            const filtroF = document.getElementById('filtroFechaGlobal').value;
+            
+            let idBuscado = String(clienteId).trim().toUpperCase();
+            let dataCli = ventasGlobalesRaw.filter(v => String(v.clienteId).trim().toUpperCase() === idBuscado && (filtroF === 'TODOS' || v.fechaFormat === filtroF));
+            
+            let provAg = {};
+            dataCli.forEach(v => {
+                let p = v.proveedor || 'OTRO';
+                if(!provAg[p]) provAg[p] = { dolares:0, cajas:0 };
+                provAg[p].dolares += parseFloat(v.dolares)||0;
+                provAg[p].cajas += parseFloat(v.cajas)||0;
+            });
+
+            let top5 = Object.entries(provAg).map(([p, vals]) => ({prov: p, dolares: vals.dolares, cajas: vals.cajas})).sort((a,b) => b.dolares - a.dolares).slice(0, 5);
+
+            let htmlRows = top5.map((t, idx) => `<tr><td class="px-3 py-2 font-bold text-slate-500">${idx+1}</td><td class="px-3 py-2 font-bold text-slate-800">${t.prov}</td><td class="px-3 py-2 text-right">${Math.round(t.cajas).toLocaleString()}</td><td class="px-3 py-2 text-right text-emerald-600 font-black">$${t.dolares.toLocaleString('en-US',{maximumFractionDigits:1})}</td></tr>`).join('');
+            
+            if(top5.length === 0) htmlRows = `<tr><td colspan="4" class="text-center py-4 text-slate-500">No hay ventas registradas</td></tr>`;
+            
+            document.getElementById('modalDetallesContenido').innerHTML = `
+                <table class="min-w-full text-sm text-left border-collapse"><thead class="bg-slate-100 text-slate-600 uppercase font-bold"><tr><th class="px-3 py-2">#</th><th class="px-3 py-2">Marca/Proveedor</th><th class="px-3 py-2 text-right">Cajas</th><th class="px-3 py-2 text-right">Monto ($)</th></tr></thead><tbody class="divide-y divide-slate-100">${htmlRows}</tbody></table>
+            `;
+            document.getElementById('modalDetalles').classList.remove('hidden');
+        }
+
+        function cerrarModalDetalles() { document.getElementById('modalDetalles').classList.add('hidden'); }
+
+        function instanciarDona(ctxId, labels, dataObj, colors) { const ctx = document.getElementById(ctxId).getContext('2d'); if(graficos[ctxId]) graficos[ctxId].destroy(); graficos[ctxId] = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ data: dataObj, backgroundColor: colors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } }); }
+        function instanciarBarraAgrupada(ctxId, labels, dataReal, dataMeta) { const ctx = document.getElementById(ctxId).getContext('2d'); if(graficos[ctxId]) graficos[ctxId].destroy(); graficos[ctxId] = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Real', data: dataReal, backgroundColor: '#3b82f6', borderRadius: 4 }, { label: 'Meta', data: dataMeta, backgroundColor: '#cbd5e1', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } } } } }); }
+        function instanciarGrafico(ctxId, tipo, labels, dataObj, colorHex) { 
+            const el = document.getElementById(ctxId); if(!el) return; const ctx = el.getContext('2d'); if(graficos[ctxId]) graficos[ctxId].destroy(); 
+            let prefijo = metricaDashboard === 'dolares' ? '$' : '';
+            graficos[ctxId] = new Chart(ctx, { type: tipo, data: { labels: labels, datasets: [{ label: metricaDashboard.toUpperCase(), data: dataObj, backgroundColor: colorHex, borderRadius: tipo === 'bar' ? 4 : 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return prefijo + (value >= 1000 ? (value/1000).toFixed(1) + 'k' : value); } } } } } }); 
+        }
+
+        function instanciarGraficoDoble(ctxId, labels, dataDolares, dataCajas) {
+            const el = document.getElementById(ctxId); if(!el) return;
+            const ctx = el.getContext('2d'); if(graficos[ctxId]) graficos[ctxId].destroy();
+            graficos[ctxId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Dólares ($)', data: dataDolares, backgroundColor: '#10b981', yAxisID: 'y', borderRadius: 4 },
+                        { label: 'Cajas', data: dataCajas, backgroundColor: '#6366f1', yAxisID: 'y1', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { type: 'linear', display: true, position: 'left', title: {display: true, text: 'Dólares'}, ticks: { callback: function(v){ return '$'+v; } } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text: 'Cajas'} }
+                    }
+                }
+            });
+        }
+
+        function agruparTop(data, keyCol, sortCol = 'dolares', topN = 10) { let ag = {}; data.forEach(d => { const k = d[keyCol] || 'N/A'; if(!ag[k]) ag[k] = { dolares: 0, cajas: 0 }; ag[k].dolares += d.dolares; ag[k].cajas += d.cajas; }); return Object.entries(ag).map(([label, vals]) => ({ label, dolares: vals.dolares, cajas: vals.cajas })).sort((a,b) => b[sortCol] - a[sortCol]).slice(0, topN); }
+
+        function cambiarMetricaGeneral(tipo) {
+            metricaDashboard = tipo;
+            const btnDol = document.getElementById('btnToggleDol'); const btnCaj = document.getElementById('btnToggleCaj');
+            if(tipo === 'dolares') {
+                btnDol.className = "px-5 py-1.5 text-sm font-black rounded-md bg-white shadow-sm text-emerald-700 transition";
+                btnCaj.className = "px-5 py-1.5 text-sm font-black rounded-md text-slate-500 hover:text-slate-800 transition";
+            } else {
+                btnCaj.className = "px-5 py-1.5 text-sm font-black rounded-md bg-white shadow-sm text-indigo-700 transition";
+                btnDol.className = "px-5 py-1.5 text-sm font-black rounded-md text-slate-500 hover:text-slate-800 transition";
+            }
+            renderizarDashboardGeneral();
+        }
+
+        function renderizarDashboardGeneral() {
+            if(ventasGlobalesRaw.length === 0) return;
+            const fZona = document.getElementById('filtroZona').value; const fProv = document.getElementById('filtroProveedor').value; const fSem = document.getElementById('filtroSemana').value;
+            const fFec = document.getElementById('filtroFechaGlobal').value;
+            const fAses = document.getElementById('filtroAsesor') ? document.getElementById('filtroAsesor').value : 'TODOS';
+            
+            const datosFiltrados = ventasGlobalesRaw.filter(v => (fZona === 'TODOS' || v.zona === fZona) && (fProv === 'TODOS' || v.proveedor === fProv) && (fSem === 'TODOS' || v.semana === fSem) && (fAses === 'TODOS' || v.asesorCode === fAses) && (fFec === 'TODOS' || v.fechaFormat === fFec));
+            
+            let sumCajas = 0; let sumDolares = 0; const clientesUnicos = new Set();
+            datosFiltrados.forEach(d => { sumCajas += parseFloat(d.cajas) || 0; sumDolares += parseFloat(d.dolares) || 0; if((parseFloat(d.cajas)>0 || parseFloat(d.dolares)>0) && d.clienteId) clientesUnicos.add(d.clienteId); });
+            document.getElementById('kpiDolares').innerText = '$' + sumDolares.toLocaleString('en-US', {maximumFractionDigits:0}); document.getElementById('kpiCajas').innerText = sumCajas.toLocaleString('en-US', {maximumFractionDigits:0}); document.getElementById('kpiClientes').innerText = clientesUnicos.size; document.getElementById('kpiTicket').innerText = clientesUnicos.size > 0 ? '$' + (sumDolares / clientesUnicos.size).toLocaleString('en-US', {maximumFractionDigits:1}) : '$0';
+
+            const cM = metricaDashboard;
+
+            const topTendencia = agruparTop(datosFiltrados, 'semana', cM, 12).sort((a,b) => a.label.localeCompare(b.label)); instanciarGrafico('cg_tendencia', 'line', topTendencia.map(x=>x.label), topTendencia.map(x=>x[cM]), '#10b981');
+            const topZona = agruparTop(datosFiltrados, 'zona', cM, 5); instanciarGrafico('cg_zona', 'bar', topZona.map(x=>x.label.substring(0, 15)), topZona.map(x=>x[cM]), '#1e3a8a');
+            const topProv = agruparTop(datosFiltrados, 'proveedor', cM, 5); instanciarGrafico('cg_proveedor', 'bar', topProv.map(x=>x.label.substring(0, 15)), topProv.map(x=>x[cM]), '#10b981');
+            
+            if(document.getElementById('simuladorAsesor').value === 'GLOBAL' && document.getElementById('cg_asesor')) {
+                const topAsesorObj = agruparTop(datosFiltrados, 'asesorCode', cM, 5); const labelAsesores = topAsesorObj.map(x => (mapRutas[x.label] || x.label).split('-')[1]?.trim() || x.label); instanciarGrafico('cg_asesor', 'bar', labelAsesores, topAsesorObj.map(x=>x[cM]), '#f59e0b');
+            }
+
+            const dataSemanal = agruparTop(datosFiltrados, 'semana', 'dolares', 12).sort((a,b) => a.label.localeCompare(b.label));
+            instanciarGraficoDoble('cg_semanal_doble', dataSemanal.map(x=>x.label), dataSemanal.map(x=>x.dolares), dataSemanal.map(x=>x.cajas));
+
+            const cliAg = {}; datosFiltrados.forEach(v => { const id = v.clienteNombre + '|' + v.zona; if(!cliAg[id]) cliAg[id] = { dolares:0, cajas:0 }; cliAg[id].dolares += v.dolares; cliAg[id].cajas += v.cajas; });
+            const topClientesArr = Object.entries(cliAg).map(([k, v]) => ({ info: k.split('|'), dolares: v.dolares, cajas: v.cajas })).sort((a,b) => b[cM] - a[cM]).slice(0, 20);
+            
+            let htmlPC = ''; topClientesArr.forEach((c, idx) => { htmlPC += `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="px-4 py-3 font-bold">${idx+1}</td><td class="px-4 py-3 font-bold text-slate-900">${c.info[0]}</td><td class="px-4 py-3 text-slate-500">${c.info[1]}</td><td class="px-4 py-3 text-right">${Math.round(c.cajas).toLocaleString()}</td><td class="px-4 py-3 text-right font-black text-emerald-600">$${c.dolares.toLocaleString('en-US', {maximumFractionDigits:1})}</td></tr>`; }); document.getElementById('tablaTopClientes').innerHTML = htmlPC;
+        }
+
+        function renderizarTabClientes() {
+            const fZona = document.getElementById('filtroZonaCli').value; const fProv = document.getElementById('filtroProvCli').value; const fSem = document.getElementById('filtroSemCli').value; const fDia = document.getElementById('filtroDiaCli').value; const fEstado = document.getElementById('filtroEstadoCli').value;
+            const fFec = document.getElementById('filtroFechaGlobal').value;
+            const fAses = document.getElementById('filtroAsesorCli') ? document.getElementById('filtroAsesorCli').value : 'TODOS';
+            
+            const ventasFiltradas = ventasGlobalesRaw.filter(v => (fProv === 'TODOS' || v.proveedor === fProv) && (fSem === 'TODOS' || v.semana === fSem) && (fFec === 'TODOS' || v.fechaFormat === fFec));
+            
+            const ventasPorCliente = {}; ventasFiltradas.forEach(v => { const id = String(v.clienteId).trim().toUpperCase(); if(!ventasPorCliente[id]) { ventasPorCliente[id] = { cajas:0, dolares:0 }; } ventasPorCliente[id].cajas += parseFloat(v.cajas) || 0; ventasPorCliente[id].dolares += parseFloat(v.dolares) || 0; });
+            const clientesUnificados = {};
+
+            carteraRaw.forEach(c => { const id = String(c['CODIGO'] || c['COD CLIENTE'] || c['CLIENTE'] || 'S/ID').trim().toUpperCase(); const code = extraerRuta(c['RUTA'] || c['ASESOR']); clientesUnificados[id] = { id: id, nombre: c['NOMBRE'] || c['NOMBRE CLIENTE'] || c['RAZON SOCIAL'] || id, asesorCode: code, zona: (c['ZONA'] || 'S/Z').toString().toUpperCase(), dia: (c['DIAVISITA'] || c['DIA VISITA'] || c['DIA'] || 'N/A').toString().toUpperCase(), cajas: 0, dolares: 0 }; });
+            ventasGlobalesRaw.forEach(v => { const id = String(v.clienteId).trim().toUpperCase(); if(!clientesUnificados[id]) { clientesUnificados[id] = { id: id, nombre: v.clienteNombre, asesorCode: v.asesorCode, zona: v.zona, dia: v.diaVisita || 'N/A', cajas: 0, dolares: 0 }; } else if (clientesUnificados[id].asesorCode === 'N/A') { clientesUnificados[id].asesorCode = v.asesorCode; } });
+
+            Object.keys(ventasPorCliente).forEach(id => { if(clientesUnificados[id]) { clientesUnificados[id].cajas = ventasPorCliente[id].cajas; clientesUnificados[id].dolares = ventasPorCliente[id].dolares; } });
+
+            const isGlobal = document.getElementById('simuladorAsesor').value === 'GLOBAL';
+
+            const listaClientes = Object.values(clientesUnificados).map(c => { c.estado = (c.dolares > 0 || c.cajas > 0) ? 'ACTIVO' : 'INACTIVO'; return c; }).filter(c => { return (fZona === 'TODOS' || c.zona === fZona) && (fDia === 'TODOS' || c.dia === fDia) && (fEstado === 'TODOS' || c.estado === fEstado) && (fAses === 'TODOS' || c.asesorCode === fAses); }).sort((a,b) => b.dolares - a.dolares);
+
+            let htmlPC = ''; let sumCajas = 0, sumDolares = 0;
+            const colsTotal = isGlobal ? 5 : 4;
+
+            if(listaClientes.length === 0) {
+                document.getElementById('tablaTotalClientesPC').innerHTML = `<tr><td colspan="${colsTotal + 2}"><div class="text-center py-8 font-bold text-slate-500">No se encontraron clientes.</div></td></tr>`; return;
+            }
+
+            listaClientes.forEach((c) => {
+                const cajas = Math.round(c.cajas).toLocaleString(); const dolares = c.dolares.toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}); sumCajas += c.cajas; sumDolares += c.dolares;
+                const badgeEstado = c.estado === 'ACTIVO' ? '<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded font-bold">🟢 ACTIVO</span>' : '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">🔴 INACTIVO</span>';
+                const claseOpaca = c.estado === 'INACTIVO' ? 'opacity-70 bg-slate-50' : 'hover:bg-sky-50 transition'; 
+                const nCli = c.nombre.replace(/'/g, "\\'"); 
+
+                htmlPC += `
+                    <tr onclick="abrirDetalleClientePortafolio('${c.id}', '${nCli}')" class="border-b border-slate-100 ${claseOpaca} hover:shadow-sm cursor-pointer">
+                        <td class="px-4 py-3"><span class="font-bold text-slate-900 block">${c.nombre}</span><span class="text-xs text-slate-400 font-mono">ID: ${c.id}</span></td>
+                        <td class="px-4 py-3 text-sm text-slate-500">${c.zona}</td>
+                        ${isGlobal ? `<td class="px-4 py-3 text-sm font-bold text-slate-700">${mapRutas[c.asesorCode] || c.asesorCode}</td>` : ''}
+                        <td class="px-4 py-3 text-sm font-bold text-center text-sky-700 bg-sky-50 rounded-md">${c.dia}</td>
+                        <td class="px-4 py-3 text-center">${badgeEstado}</td>
+                        <td class="px-4 py-3 text-right font-bold text-slate-600">${cajas}</td>
+                        <td class="px-4 py-3 text-right font-black ${c.estado === 'ACTIVO' ? 'text-emerald-600' : 'text-slate-400'}">$${dolares}</td>
+                    </tr>
+                `;
+            });
+
+            const totalGlobalPC = `<tr class="bg-slate-800 text-white font-bold sticky bottom-0"><td class="px-4 py-4 text-right uppercase text-xs tracking-wider" colspan="${colsTotal}">TOTALES (${listaClientes.length} Clientes)</td><td class="px-4 py-4 text-right text-base">${Math.round(sumCajas).toLocaleString()}</td><td class="px-4 py-4 text-right text-emerald-400 text-base">$${sumDolares.toLocaleString('en-US', {maximumFractionDigits:1})}</td></tr>`;
+            document.getElementById('tablaTotalClientesPC').innerHTML = htmlPC + totalGlobalPC; 
+        }
+    </script>
+</body>
+</html>
